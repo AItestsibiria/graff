@@ -20,13 +20,25 @@ import uuid
 from pathlib import Path
 from typing import AsyncGenerator, Optional
 
-from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
 DATA_DIR = Path(os.environ.get("GRAFF_DATA", "/var/graff-saas"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+# API-ключи: GRAFF_API_KEYS=key1,key2 (пусто = auth отключён, dev-режим)
+_API_KEYS: set[str] = set(
+    k.strip() for k in os.environ.get("GRAFF_API_KEYS", "").split(",") if k.strip()
+)
+
+
+def _auth(x_api_key: str | None = Header(default=None)):
+    if not _API_KEYS:
+        return  # dev-режим без auth
+    if not x_api_key or x_api_key not in _API_KEYS:
+        raise HTTPException(401, "Требуется X-Api-Key")
 
 # token → {status, url, db, nodes, edges, created_at, error?}
 _repos: dict[str, dict] = {}
@@ -98,7 +110,7 @@ async def root():
 
 
 @app.post("/api/repos")
-async def submit_repo(payload: RepoIn, bg: BackgroundTasks):
+async def submit_repo(payload: RepoIn, bg: BackgroundTasks, _=Depends(_auth)):
     url = payload.url.strip().rstrip("/")
     if not url.startswith("https://github.com/"):
         raise HTTPException(400, "Поддерживается только https://github.com/...")
@@ -113,7 +125,7 @@ async def submit_repo(payload: RepoIn, bg: BackgroundTasks):
 
 
 @app.get("/api/repos")
-async def list_repos():
+async def list_repos(_=Depends(_auth)):
     return [{"token": e["token"], "url": e["url"], "status": e["status"],
              "nodes": e.get("nodes", 0), "edges": e.get("edges", 0)}
             for e in _repos.values()]
