@@ -8,8 +8,17 @@ dependencies = [
     "tree-sitter-languages==1.10.2",
 ]
 
+[project.optional-dependencies]
+server = [
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.29",
+    "httpx>=0.27",
+    "python-multipart>=0.0.9",
+]
+
 [project.scripts]
 graff = "graff.cli:main"
+graff-server = "graff.server:main"
 
 [build-system]
 requires = ["setuptools>=61"]
