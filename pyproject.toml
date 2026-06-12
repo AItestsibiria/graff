@@ -1,0 +1,19 @@
+[project]
+name = "graff"
+version = "0.1.0"
+description = "Graff — standalone-граф кода (символы + связи) с MCP-сервером"
+requires-python = ">=3.9"
+dependencies = [
+    "tree-sitter==0.21.3",
+    "tree-sitter-languages==1.10.2",
+]
+
+[project.scripts]
+graff = "graff.cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["graff", "graff.parsers"]
