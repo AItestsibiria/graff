@@ -133,7 +133,7 @@ async def api_register(payload: RegisterIn):
     return result
 
 
-# ─── Stripe checkout ─────────────────────────────────────────────────────────
+# ─── Lemon Squeezy checkout ──────────────────────────────────────────────────
 
 class UpgradeIn(BaseModel):
     plan: str
@@ -142,56 +142,53 @@ class UpgradeIn(BaseModel):
 @app.post("/graff/api/upgrade")
 @app.post("/api/upgrade")
 async def api_upgrade(payload: UpgradeIn, key_data: dict = Depends(_require_key)):
-    if not STRIPE_SECRET:
-        raise HTTPException(503, "Stripe не настроен")
-    import stripe
-    stripe.api_key = STRIPE_SECRET
+    from . import lemonsqueezy as ls
+    if not ls.LS_API_KEY:
+        raise HTTPException(503, "Платёжная система не настроена (LS_API_KEY)")
     plan = payload.plan if payload.plan in ("pro", "team") else "pro"
-    price_id = PLANS[plan]["price_id"]
-    if not price_id:
-        raise HTTPException(503, f"Stripe price для '{plan}' не настроен")
-
-    customer_id = key_data.get("stripe_customer_id")
-    if not customer_id:
-        customer = stripe.Customer.create(email=key_data["email"],
-                                          metadata={"api_key": key_data["key"]})
-        customer_id = customer.id
-        set_stripe_customer(key_data["key"], customer_id)
-
-    session = stripe.checkout.Session.create(
-        customer=customer_id,
-        payment_method_types=["card"],
-        line_items=[{"price": price_id, "quantity": 1}],
-        mode="subscription",
-        success_url=f"{BASE_URL}/?upgraded=1",
-        cancel_url=f"{BASE_URL}/",
-        metadata={"plan": plan, "api_key": key_data["key"]},
-    )
-    return {"checkout_url": session.url}
-
-
-@app.post("/graff/webhooks/stripe")
-@app.post("/webhooks/stripe")
-async def stripe_webhook(request: Request):
-    if not STRIPE_SECRET:
-        raise HTTPException(503, "Stripe не настроен")
-    import stripe
-    stripe.api_key = STRIPE_SECRET
-    payload = await request.body()
-    sig = request.headers.get("stripe-signature", "")
     try:
-        event = stripe.Webhook.construct_event(payload, sig, STRIPE_WEBHOOK)
+        url = await ls.create_checkout(
+            email=key_data["email"],
+            plan=plan,
+            api_key=key_data["key"],
+            success_url=f"{BASE_URL}/?upgraded=1&plan={plan}",
+        )
     except Exception as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(502, f"Ошибка создания checkout: {e}")
+    return {"checkout_url": url, "plan": plan}
 
-    if event["type"] in ("checkout.session.completed",
-                          "customer.subscription.updated"):
-        obj = event["data"]["object"]
-        customer_id = obj.get("customer")
-        plan = (obj.get("metadata") or {}).get("plan", "pro")
-        sub_id = obj.get("subscription") or obj.get("id", "")
-        if customer_id:
-            upgrade_plan(customer_id, plan, sub_id)
+
+@app.post("/graff/webhooks/ls")
+@app.post("/webhooks/ls")
+async def ls_webhook(request: Request):
+    from . import lemonsqueezy as ls
+    body = await request.body()
+    sig = request.headers.get("x-signature", "")
+    if not ls.verify_webhook(body, sig):
+        raise HTTPException(400, "invalid signature")
+    try:
+        data = json.loads(body)
+    except Exception:
+        raise HTTPException(400, "invalid JSON")
+    info = ls.parse_webhook(data)
+    if info:
+        # активировать план по api_key (если передан) или email
+        from .auth import get_key, upgrade_plan
+        import sqlite3, time
+        from pathlib import Path
+        db_path = str(DATA_DIR / "auth.db")
+        with sqlite3.connect(db_path, timeout=10) as db:
+            limit = {"free": 1, "pro": 5, "team": 999}.get(info["plan"], 5)
+            if info["api_key"]:
+                db.execute(
+                    "UPDATE api_keys SET plan=?,repos_limit=?,active=1 WHERE key=?",
+                    (info["plan"], limit, info["api_key"]),
+                )
+            elif info["email"]:
+                db.execute(
+                    "UPDATE api_keys SET plan=?,repos_limit=?,active=1 WHERE email=?",
+                    (info["plan"], limit, info["email"].lower()),
+                )
     return {"ok": True}
 
 
