@@ -4,6 +4,9 @@ analyze(repo_path) → парсит Python (ast) и прочие языки (tre
 батч-вставка nodes/edges, 2-й проход разрешения связей по имени, регистрация
 в глобальном реестре. Граф пишется в <repo>/.graff/graph.db.
 """
+# Copyright (c) 2025 BAI / AItestsibiria. Business Source License 1.1.
+# Commercial SaaS use requires a commercial license: egnovoselov@gmail.com
+
 from __future__ import annotations
 
 import os

@@ -4,6 +4,9 @@
 IMPORTS/CALLS/HAS_METHOD/INHERITS/CONTAINS/REFERENCES). Поиск по именам — через
 FTS5 (BM25). Хранится в <repo>/.graff/graph.db.
 """
+# Copyright (c) 2025 BAI / AItestsibiria. Business Source License 1.1.
+# Commercial SaaS use requires a commercial license: egnovoselov@gmail.com
+
 from __future__ import annotations
 
 import sqlite3

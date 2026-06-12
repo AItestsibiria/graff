@@ -4,6 +4,9 @@
 graff_impact, graff_flows, graff_list_repos, graff_status. Каждый (кроме list)
 принимает опциональный repo (алиас|путь) — без него берётся единственный/текущий.
 """
+# Copyright (c) 2025 BAI / AItestsibiria. Business Source License 1.1.
+# Commercial SaaS use requires a commercial license: egnovoselov@gmail.com
+
 from __future__ import annotations
 
 import json

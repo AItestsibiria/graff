@@ -1,4 +1,7 @@
 """API-ключи + планы + Stripe. SQLite в GRAFF_DATA/auth.db."""
+# Copyright (c) 2025 BAI / AItestsibiria. Business Source License 1.1.
+# Commercial SaaS use requires a commercial license: egnovoselov@gmail.com
+
 from __future__ import annotations
 
 import os
