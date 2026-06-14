@@ -2,6 +2,8 @@
 name = "graff"
 version = "0.1.0"
 description = "Graff — standalone-граф кода (символы + связи) с MCP-сервером"
+authors = [{ name = "NEG", email = "egnovoselov@gmail.com" }]
+license = { text = "BSL-1.1" }
 requires-python = ">=3.9"
 dependencies = [
     "tree-sitter==0.21.3",

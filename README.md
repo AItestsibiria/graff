@@ -1,5 +1,7 @@
 # Graff — граф кода + MCP-сервер
 
+**Автор / Author:** NEG · egnovoselov@gmail.com
+
 Standalone-инструмент: индексирует ЛЮБОЙ репозиторий в граф символов и связей,
 отдаёт навигацию/impact-анализ как CLI и как MCP-сервер для AI-агентов (Claude
 Code, Cursor и т.п.).

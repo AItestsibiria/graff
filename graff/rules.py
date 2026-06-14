@@ -140,7 +140,7 @@ def rule_proxyhandler_to_target(store, repo_path) -> list[dict]:
         lines = text.splitlines()
         for m in rx.finditer(text):
             line = _line_of(text, m.start())
-            ctx = " ".join(lines[max(0, line - 2):line + 1]).lower()
+            ctx = " ".join(lines[max(0, line - 3):line]).lower()
             is_infra = any(w in ctx for w in
                            ("infra", "ipify", "ip-api", "ads-api", "localhost",
                             "claude-mem", "dadata", "deepseek"))
